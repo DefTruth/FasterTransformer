@@ -22,9 +22,9 @@ if(${CUDA_VERSION_MAJOR} VERSION_GREATER_EQUAL "11")
 endif()
 
 if((${CUDA_VERSION_MAJOR} VERSION_GREATER_EQUAL "11" AND ${CUDA_VERSION_MINOR} VERSION_GREATER_EQUAL "8") OR (${CUDA_VERSION_MAJOR} VERSION_GREATER_EQUAL "12"))
+  add_definitions("-DENABLE_FP8")
   option(ENABLE_FP8 "ENABLE_FP8" OFF)
   if(ENABLE_FP8)
-    add_definitions("-DENABLE_FP8")
     message("CUDA_VERSION ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} is greater or equal than 11.8, enable -DENABLE_FP8 flag")
   endif()
 endif()
@@ -245,6 +245,10 @@ if(BUILD_PYT)
                   OUTPUT_VARIABLE TORCH_VERSION)
   if (TORCH_VERSION VERSION_LESS "1.5.0")
       message(FATAL_ERROR "PyTorch >= 1.5.0 is needed for TorchScript mode.")
+  elseif(TORCH_VERSION VERSION_GREATER_EQUAL "2.0.1") 
+      if("${CXX_STD}" VERSION_LESS "17")
+          message(FATAL_ERROR "PyTorch >= 2.0.1 is needed c++ 17, please set -DCXX_STD=17")
+      endif()    
   endif()
   execute_process(COMMAND ${PYTHON_PATH} "-c" "from __future__ import print_function; import os; import torch;
 print(os.path.dirname(torch.__file__),end='');"
@@ -302,7 +306,9 @@ add_subdirectory(3rdparty)
 add_subdirectory(src)
 add_subdirectory(examples)
 
-add_subdirectory(tests)
+if (ENABLE_TESTS)
+    add_subdirectory(tests)
+endif()
 
 # # Mesaure the compile time
 option(MEASURE_BUILD_TIME "Measure the build time of each module" OFF)
